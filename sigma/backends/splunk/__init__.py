@@ -1,5 +1,5 @@
-from .splunk import SplunkBackend
+from .gravwell import GravwellBackend
 
 backends = {
-    "splunk": SplunkBackend,
+    "gravwell": GravwellBackend,
 }
