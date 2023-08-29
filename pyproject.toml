@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "pysigma-backend-splunk"
+name = "pysigma-backend-gravwell"
 version = "1.0.3"
-description = "pySigma Splunk backend"
-authors = ["Thomas Patzke <thomas@patzke.org>"]
+description = "pySigma Gravwell backend"
+authors = [Keith Smiley]
 license = "LGPL-2.1-only"
-repository = "https://github.com/SigmaHQ/pySigma-backend-splunk"
+repository = "https://github.com/SigmaHQ/pySigma-backend-gravwell"
 packages = [
     { include = "sigma" }
 ]
