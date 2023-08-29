@@ -17,7 +17,7 @@ windows_sysmon_acceleration_keywords = {    # Map Sysmon event sources and keywo
    "file_event": "TargetFilename",
 }
 
-splunk_sysmon_process_creation_cim_mapping = {
+gravwell_sysmon_process_creation_cim_mapping = {
     "CommandLine": "Processes.process",
     "Computer": "Processes.dest",
     "CurrentDirectory": "Processes.process_current_directory",
@@ -33,7 +33,7 @@ splunk_sysmon_process_creation_cim_mapping = {
     "User": "Processes.user",
 }
 
-splunk_windows_registry_cim_mapping = {
+gravwell_windows_registry_cim_mapping = {
     "Computer": "Registry.dest",
     "Details": "Registry.registry_value_data",
     "EventType": "Registry.action", # EventType: DeleteKey is parsed to action: deleted
@@ -43,7 +43,7 @@ splunk_windows_registry_cim_mapping = {
     "TargetObject": "Registry.registry_key_name",
 }
 
-splunk_windows_file_event_cim_mapping = {
+gravwell_windows_file_event_cim_mapping = {
     "Computer": "Filesystem.dest",
     "CreationUtcTime": "Filesystem.file_create_time",
     "Image": "Filesystem.process_path",
@@ -52,14 +52,14 @@ splunk_windows_file_event_cim_mapping = {
     "TargetFilename": "Filesystem.file_path",
 }
 
-def splunk_windows_pipeline():
+def gravwell_windows_pipeline():
     return ProcessingPipeline(
-        name="Splunk Windows log source conditions",
-        allowed_backends={"splunk"},
+        name="Gravwell Windows log source conditions",
+        allowed_backends={"gravwell"},
         priority=20,
         items=generate_windows_logsource_items("source", "WinEventLog:{source}") + [
             ProcessingItem(     # Field mappings
-                identifier="splunk_windows_field_mapping",
+                identifier="gravwell_windows_field_mapping",
                 transformation=FieldMappingTransformation({
                     "EventID": "EventCode",
                 })
@@ -67,14 +67,14 @@ def splunk_windows_pipeline():
         ],
     )
 
-def splunk_windows_sysmon_acceleration_keywords():
+def gravwell_windows_sysmon_acceleration_keywords():
     return ProcessingPipeline(
-        name="Splunk Windows Sysmon search acceleration keywords",
-        allowed_backends={"splunk"},
+        name="Gravwell Windows Sysmon search acceleration keywords",
+        allowed_backends={"gravwell"},
         priority=25,
         items=[
             ProcessingItem(     # Some optimizations searching for characteristic keyword for specific log sources
-                identifier="splunk_windows_sysmon_process_creation",
+                identifier="gravwell_windows_sysmon_process_creation",
                 transformation=AddConditionTransformation({
                     None: keyword,
                 }),
@@ -90,15 +90,15 @@ def splunk_windows_sysmon_acceleration_keywords():
         ]
     )
 
-def splunk_cim_data_model():
+def gravwell_cim_data_model():
     return ProcessingPipeline(
-        name="Splunk CIM Data Model Mapping",
-        allowed_backends={"splunk"},
+        name="Gravwell CIM Data Model Mapping",
+        allowed_backends={"gravwell"},
         priority=20,
         items=[
             ProcessingItem(
-                identifier="splunk_dm_mapping_sysmon_process_creation_unsupported_fields",
-                transformation=DetectionItemFailureTransformation("The Splunk Data Model Sigma backend supports only the following fields for process_creation log source: " + ",".join(splunk_sysmon_process_creation_cim_mapping.keys())),
+                identifier="gravwell_dm_mapping_sysmon_process_creation_unsupported_fields",
+                transformation=DetectionItemFailureTransformation("The Gravwell Data Model Sigma backend supports only the following fields for process_creation log source: " + ",".join(gravwell_sysmon_process_creation_cim_mapping.keys())),
                 rule_conditions=[
                     logsource_windows_process_creation(),
                     logsource_linux_process_creation(),
@@ -106,13 +106,13 @@ def splunk_cim_data_model():
                 rule_condition_linking=any,
                 field_name_conditions=[
                     ExcludeFieldCondition(
-                        fields = splunk_sysmon_process_creation_cim_mapping.keys()
+                        fields = gravwell_sysmon_process_creation_cim_mapping.keys()
                     )
                 ]
             ),
             ProcessingItem(
-                identifier="splunk_dm_mapping_sysmon_process_creation",
-                transformation=FieldMappingTransformation(splunk_sysmon_process_creation_cim_mapping),
+                identifier="gravwell_dm_mapping_sysmon_process_creation",
+                transformation=FieldMappingTransformation(gravwell_sysmon_process_creation_cim_mapping),
                 rule_conditions=[
                     logsource_windows_process_creation(),
                     logsource_linux_process_creation(),
@@ -120,8 +120,8 @@ def splunk_cim_data_model():
                 rule_condition_linking=any,
             ),
             ProcessingItem(
-                identifier="splunk_dm_fields_sysmon_process_creation",
-                transformation=SetStateTransformation("fields", splunk_sysmon_process_creation_cim_mapping.values()),
+                identifier="gravwell_dm_fields_sysmon_process_creation",
+                transformation=SetStateTransformation("fields", gravwell_sysmon_process_creation_cim_mapping.values()),
                 rule_conditions=[
                     logsource_windows_process_creation(),
                     logsource_linux_process_creation(),
@@ -129,7 +129,7 @@ def splunk_cim_data_model():
                 rule_condition_linking=any,
             ),
             ProcessingItem(
-                identifier="splunk_dm_sysmon_process_creation_data_model_set",
+                identifier="gravwell_dm_sysmon_process_creation_data_model_set",
                 transformation=SetStateTransformation("data_model_set", "Endpoint.Processes"),
                 rule_conditions=[
                     logsource_windows_process_creation(),
@@ -138,8 +138,8 @@ def splunk_cim_data_model():
                 rule_condition_linking=any,
             ),
             ProcessingItem(
-                identifier="splunk_dm_mapping_sysmon_registry_unsupported_fields",
-                transformation=DetectionItemFailureTransformation("The Splunk Data Model Sigma backend supports only the following fields for registry log source: " + ",".join(splunk_windows_registry_cim_mapping.keys())),
+                identifier="gravwell_dm_mapping_sysmon_registry_unsupported_fields",
+                transformation=DetectionItemFailureTransformation("The Gravwell Data Model Sigma backend supports only the following fields for registry log source: " + ",".join(gravwell_windows_registry_cim_mapping.keys())),
                 rule_conditions=[
                     logsource_windows_registry_add(),
                     logsource_windows_registry_delete(),
@@ -149,13 +149,13 @@ def splunk_cim_data_model():
                 rule_condition_linking=any,
                 field_name_conditions=[
                     ExcludeFieldCondition(
-                        fields = splunk_windows_registry_cim_mapping.keys()
+                        fields = gravwell_windows_registry_cim_mapping.keys()
                     )
                 ]
             ),
             ProcessingItem(
-                identifier="splunk_dm_mapping_sysmon_registry",
-                transformation=FieldMappingTransformation(splunk_windows_registry_cim_mapping),
+                identifier="gravwell_dm_mapping_sysmon_registry",
+                transformation=FieldMappingTransformation(gravwell_windows_registry_cim_mapping),
                 rule_conditions=[
                     logsource_windows_registry_add(),
                     logsource_windows_registry_delete(),
@@ -165,8 +165,8 @@ def splunk_cim_data_model():
                 rule_condition_linking=any,
             ),
             ProcessingItem(
-                identifier="splunk_dm_fields_sysmon_registry",
-                transformation=SetStateTransformation("fields", splunk_windows_registry_cim_mapping.values()),
+                identifier="gravwell_dm_fields_sysmon_registry",
+                transformation=SetStateTransformation("fields", gravwell_windows_registry_cim_mapping.values()),
                 rule_conditions=[
                     logsource_windows_registry_add(),
                     logsource_windows_registry_delete(),
@@ -176,7 +176,7 @@ def splunk_cim_data_model():
                 rule_condition_linking=any,
             ),
             ProcessingItem(
-                identifier="splunk_dm_sysmon_registry_data_model_set",
+                identifier="gravwell_dm_sysmon_registry_data_model_set",
                 transformation=SetStateTransformation("data_model_set", "Endpoint.Registry"),
                 rule_conditions=[
                     logsource_windows_registry_add(),
@@ -187,47 +187,47 @@ def splunk_cim_data_model():
                 rule_condition_linking=any,
             ),
             ProcessingItem(
-                identifier="splunk_dm_mapping_sysmon_file_event_unsupported_fields",
-                transformation=DetectionItemFailureTransformation("The Splunk Data Model Sigma backend supports only the following fields for file_event log source: " + ",".join(splunk_windows_file_event_cim_mapping.keys())),
+                identifier="gravwell_dm_mapping_sysmon_file_event_unsupported_fields",
+                transformation=DetectionItemFailureTransformation("The Gravwell Data Model Sigma backend supports only the following fields for file_event log source: " + ",".join(gravwell_windows_file_event_cim_mapping.keys())),
                 rule_conditions=[
                     logsource_windows_file_event(),
                 ],
                 field_name_conditions=[
                     ExcludeFieldCondition(
-                        fields = splunk_windows_file_event_cim_mapping.keys()
+                        fields = gravwell_windows_file_event_cim_mapping.keys()
                     )
                 ]
             ),
             ProcessingItem(
-                identifier="splunk_dm_mapping_sysmon_file_event",
-                transformation=FieldMappingTransformation(splunk_windows_file_event_cim_mapping),
+                identifier="gravwell_dm_mapping_sysmon_file_event",
+                transformation=FieldMappingTransformation(gravwell_windows_file_event_cim_mapping),
                 rule_conditions=[
                     logsource_windows_file_event(),
                 ]
             ),
             ProcessingItem(
-                identifier="splunk_dm_fields_sysmon_file_event",
-                transformation=SetStateTransformation("fields", splunk_windows_file_event_cim_mapping.values()),
+                identifier="gravwell_dm_fields_sysmon_file_event",
+                transformation=SetStateTransformation("fields", gravwell_windows_file_event_cim_mapping.values()),
                 rule_conditions=[
                     logsource_windows_file_event(),
                 ]
             ),
             ProcessingItem(
-                identifier="splunk_dm_mapping_sysmon_file_event_data_model_set",
+                identifier="gravwell_dm_mapping_sysmon_file_event_data_model_set",
                 transformation=SetStateTransformation("data_model_set", "Endpoint.Filesystem"),
                 rule_conditions=[
                     logsource_windows_file_event(),
                 ]
             ),
             ProcessingItem(
-                identifier="splunk_dm_mapping_log_source_not_supported",
+                identifier="gravwell_dm_mapping_log_source_not_supported",
                 rule_condition_linking=any,
-                transformation=RuleFailureTransformation("Rule type not yet supported by the Splunk data model CIM pipeline!"),
+                transformation=RuleFailureTransformation("Rule type not yet supported by the Gravwell data model CIM pipeline!"),
                 rule_condition_negation=True,
                 rule_conditions=[
-                    RuleProcessingItemAppliedCondition("splunk_dm_mapping_sysmon_process_creation"),
-                    RuleProcessingItemAppliedCondition("splunk_dm_mapping_sysmon_registry"),
-                    RuleProcessingItemAppliedCondition("splunk_dm_mapping_sysmon_file_event"),
+                    RuleProcessingItemAppliedCondition("gravwell_dm_mapping_sysmon_process_creation"),
+                    RuleProcessingItemAppliedCondition("gravwell_dm_mapping_sysmon_registry"),
+                    RuleProcessingItemAppliedCondition("gravwell_dm_mapping_sysmon_file_event"),
                 ],
             ),
         ]
