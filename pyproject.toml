@@ -2,7 +2,7 @@
 name = "pysigma-backend-gravwell"
 version = "1.0.3"
 description = "pySigma Gravwell backend"
-authors = [Keith Smiley]
+authors = [Keith Smiley <stuff>]
 license = "LGPL-2.1-only"
 repository = "https://github.com/SigmaHQ/pySigma-backend-gravwell"
 packages = [
