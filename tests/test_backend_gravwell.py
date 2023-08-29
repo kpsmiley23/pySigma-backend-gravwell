@@ -1,18 +1,18 @@
 from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
 import pytest
-from sigma.backends.splunk import SplunkBackend
+from sigma.backends.gravwell import GravwellBackend
 from sigma.collection import SigmaCollection
-from sigma.pipelines.splunk import splunk_cim_data_model
+from sigma.pipelines.gravwell import gravwell_cim_data_model
 
 @pytest.fixture
-def splunk_backend():
-    return SplunkBackend()
+def gravwell_backend():
+    return GravwellBackend()
 
 @pytest.fixture
-def splunk_custom_backend():
-    return SplunkBackend(query_settings = lambda x: {"custom.query.key": x.title}, output_settings = {"custom.key": "customvalue"})
+def gravwell_custom_backend():
+    return GravwellBackend(query_settings = lambda x: {"custom.query.key": x.title}, output_settings = {"custom.key": "customvalue"})
 
-def test_splunk_and_expression(splunk_backend : SplunkBackend):
+def test_gravwell_and_expression(gravwell_backend : GravwellBackend):
     rule = SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -26,9 +26,9 @@ def test_splunk_and_expression(splunk_backend : SplunkBackend):
                 condition: sel
         """)
 
-    assert splunk_backend.convert(rule) == ['fieldA="valueA" fieldB="valueB"']
+    assert gravwell_backend.convert(rule) == ['fieldA="valueA" fieldB="valueB"']
 
-def test_splunk_or_expression(splunk_backend : SplunkBackend):
+def test_gravwell_or_expression(gravwell_backend : GravwellBackend):
     rule = SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -42,9 +42,9 @@ def test_splunk_or_expression(splunk_backend : SplunkBackend):
                     fieldB: valueB
                 condition: 1 of sel*
         """)
-    assert splunk_backend.convert(rule) == ['fieldA="valueA" OR fieldB="valueB"']
+    assert gravwell_backend.convert(rule) == ['fieldA="valueA" OR fieldB="valueB"']
 
-def test_splunk_and_or_expression(splunk_backend : SplunkBackend):
+def test_gravwell_and_or_expression(gravwell_backend : GravwellBackend):
     rule = SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -61,9 +61,9 @@ def test_splunk_and_or_expression(splunk_backend : SplunkBackend):
                         - valueB2
                 condition: sel
         """)
-    assert splunk_backend.convert(rule) == ['fieldA IN ("valueA1", "valueA2") fieldB IN ("valueB1", "valueB2")']
+    assert gravwell_backend.convert(rule) == ['fieldA IN ("valueA1", "valueA2") fieldB IN ("valueB1", "valueB2")']
 
-def test_splunk_or_and_expression(splunk_backend : SplunkBackend):
+def test_gravwell_or_and_expression(gravwell_backend : GravwellBackend):
     rule = SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -79,10 +79,10 @@ def test_splunk_or_and_expression(splunk_backend : SplunkBackend):
                     fieldB: valueB2
                 condition: 1 of sel*
         """)
-    assert splunk_backend.convert(rule) == ['(fieldA="valueA1" fieldB="valueB1") OR (fieldA="valueA2" fieldB="valueB2")']
+    assert gravwell_backend.convert(rule) == ['(fieldA="valueA1" fieldB="valueB1") OR (fieldA="valueA2" fieldB="valueB2")']
 
-def test_splunk_in_expression(splunk_backend : SplunkBackend):
-    assert splunk_backend.convert(
+def test_gravwell_in_expression(gravwell_backend : GravwellBackend):
+    assert gravwell_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -99,8 +99,8 @@ def test_splunk_in_expression(splunk_backend : SplunkBackend):
         """)
     ) == ['fieldA IN ("valueA", "valueB", "valueC*")']
 
-def test_splunk_field_name_with_whitespace(splunk_backend : SplunkBackend):
-    assert splunk_backend.convert(
+def test_gravwell_field_name_with_whitespace(gravwell_backend : GravwellBackend):
+    assert gravwell_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -114,8 +114,8 @@ def test_splunk_field_name_with_whitespace(splunk_backend : SplunkBackend):
         """)
     ) == ['"field name"="valueA"']
 
-def test_splunk_regex_query(splunk_backend : SplunkBackend):
-    assert splunk_backend.convert(
+def test_gravwell_regex_query(gravwell_backend : GravwellBackend):
+    assert gravwell_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -131,9 +131,9 @@ def test_splunk_regex_query(splunk_backend : SplunkBackend):
         """)
     ) == ["fieldB=\"foo\" fieldC=\"bar\"\n| regex fieldA=\"foo.*bar\""]
 
-def test_splunk_regex_query_implicit_or(splunk_backend : SplunkBackend):
+def test_gravwell_regex_query_implicit_or(gravwell_backend : GravwellBackend):
     with pytest.raises(SigmaFeatureNotSupportedByBackendError, match="ORing regular expressions"):
-        splunk_backend.convert(
+        gravwell_backend.convert(
             SigmaCollection.from_yaml("""
                 title: Test
                 status: test
@@ -151,9 +151,9 @@ def test_splunk_regex_query_implicit_or(splunk_backend : SplunkBackend):
             """)
         )
 
-def test_splunk_regex_query_explicit_or(splunk_backend : SplunkBackend):
+def test_gravwell_regex_query_explicit_or(gravwell_backend : GravwellBackend):
     with pytest.raises(SigmaFeatureNotSupportedByBackendError, match="ORing regular expressions"):
-        splunk_backend.convert(
+        gravwell_backend.convert(
             SigmaCollection.from_yaml("""
                 title: Test
                 status: test
@@ -169,8 +169,8 @@ def test_splunk_regex_query_explicit_or(splunk_backend : SplunkBackend):
             """)
         )
 
-def test_splunk_single_regex_query(splunk_backend : SplunkBackend):
-    assert splunk_backend.convert(
+def test_gravwell_single_regex_query(gravwell_backend : GravwellBackend):
+    assert gravwell_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -184,8 +184,8 @@ def test_splunk_single_regex_query(splunk_backend : SplunkBackend):
         """)
     ) == ["*\n| regex fieldA=\"foo.*bar\""]
 
-def test_splunk_cidr_query(splunk_backend : SplunkBackend):
-    assert splunk_backend.convert(
+def test_gravwell_cidr_query(gravwell_backend : GravwellBackend):
+    assert gravwell_backend.convert(
         SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -201,9 +201,9 @@ def test_splunk_cidr_query(splunk_backend : SplunkBackend):
         """)
     ) == ["fieldB=\"foo\" fieldC=\"bar\"\n| where cidrmatch(\"192.168.0.0/16\", fieldA)"]
 
-def test_splunk_cidr_or(splunk_backend : SplunkBackend):
+def test_gravwell_cidr_or(gravwell_backend : GravwellBackend):
     with pytest.raises(SigmaFeatureNotSupportedByBackendError, match="ORing CIDR"):
-        splunk_backend.convert(
+        gravwell_backend.convert(
             SigmaCollection.from_yaml("""
                 title: Test
                 status: test
@@ -221,7 +221,7 @@ def test_splunk_cidr_or(splunk_backend : SplunkBackend):
             """)
         )
 
-def test_splunk_fields_output(splunk_backend : SplunkBackend):
+def test_gravwell_fields_output(gravwell_backend : GravwellBackend):
     rule = SigmaCollection.from_yaml("""
             title: Test
             status: test
@@ -236,9 +236,9 @@ def test_splunk_fields_output(splunk_backend : SplunkBackend):
                 condition: sel
         """)
 
-    assert splunk_backend.convert(rule) == ['fieldA="valueA" | table fieldA']
+    assert gravwell_backend.convert(rule) == ['fieldA="valueA" | table fieldA']
 
-def test_splunk_savedsearch_output(splunk_backend : SplunkBackend):
+def test_gravwell_savedsearch_output(gravwell_backend : GravwellBackend):
     rules = """
 title: Test 1
 description: |
@@ -271,7 +271,7 @@ detection:
         fieldB: bar
     condition: sel
     """
-    assert splunk_backend.convert(SigmaCollection.from_yaml(rules), "savedsearches") == """
+    assert gravwell_backend.convert(SigmaCollection.from_yaml(rules), "savedsearches") == """
 [default]
 dispatch.earliest_time = -30d
 dispatch.latest_time = now
@@ -288,7 +288,7 @@ description =
 search = fieldA="foo" fieldB="bar" \\
 | table fieldA,fieldB"""
 
-def test_splunk_savedsearch_output_custom(splunk_custom_backend : SplunkBackend):
+def test_gravwell_savedsearch_output_custom(gravwell_custom_backend : GravwellBackend):
     rules = """
 title: Test 1
 description: |
@@ -321,7 +321,7 @@ detection:
         fieldB: bar
     condition: sel
     """
-    assert splunk_custom_backend.convert(SigmaCollection.from_yaml(rules), "savedsearches") == """
+    assert gravwell_custom_backend.convert(SigmaCollection.from_yaml(rules), "savedsearches") == """
 [default]
 dispatch.earliest_time = -30d
 dispatch.latest_time = now
@@ -341,8 +341,8 @@ description =
 search = fieldA="foo" fieldB="bar" \\
 | table fieldA,fieldB"""
 
-def test_splunk_data_model_process_creation():
-    splunk_backend = SplunkBackend(processing_pipeline=splunk_cim_data_model())
+def test_gravwell_data_model_process_creation():
+    gravwell_backend = GravwellBackend(processing_pipeline=gravwell_cim_data_model())
     rule = """
 title: Test
 status: test
@@ -354,7 +354,7 @@ detection:
         CommandLine: test
     condition: sel
     """
-    assert splunk_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Processes where
+    assert gravwell_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Processes where
 Processes.process="test" by Processes.process Processes.dest Processes.process_current_directory Processes.process_path Processes.process_integrity_level Processes.original_file_name Processes.parent_process
 Processes.parent_process_path Processes.parent_process_guid Processes.parent_process_id Processes.process_guid Processes.process_id Processes.user
 | `drop_dm_object_name(Processes)`
@@ -362,8 +362,8 @@ Processes.parent_process_path Processes.parent_process_guid Processes.parent_pro
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(lastTime)
 """.replace("\n", " ")]
 
-def test_splunk_data_model_registry_add():
-    splunk_backend = SplunkBackend(processing_pipeline=splunk_cim_data_model())
+def test_gravwell_data_model_registry_add():
+    gravwell_backend = GravwellBackend(processing_pipeline=gravwell_cim_data_model())
     rule = """
 title: Test
 status: test
@@ -375,15 +375,15 @@ detection:
         TargetObject: test
     condition: sel
     """
-    assert splunk_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Registry where
+    assert gravwell_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Registry where
 Registry.registry_key_name="test" by Registry.dest Registry.registry_value_data Registry.action Registry.process_path Registry.process_guid Registry.process_id Registry.registry_key_name
 | `drop_dm_object_name(Registry)`
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(firstTime)
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(lastTime)
 """.replace("\n", " ")]
 
-def test_splunk_data_model_registry_delete():
-    splunk_backend = SplunkBackend(processing_pipeline=splunk_cim_data_model())
+def test_gravwell_data_model_registry_delete():
+    gravwell_backend = GravwellBackend(processing_pipeline=gravwell_cim_data_model())
     rule = """
 title: Test
 status: test
@@ -395,15 +395,15 @@ detection:
         TargetObject: test
     condition: sel
     """
-    assert splunk_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Registry where
+    assert gravwell_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Registry where
 Registry.registry_key_name="test" by Registry.dest Registry.registry_value_data Registry.action Registry.process_path Registry.process_guid Registry.process_id Registry.registry_key_name
 | `drop_dm_object_name(Registry)`
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(firstTime)
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(lastTime)
 """.replace("\n", " ")]
 
-def test_splunk_data_model_registry_event():
-    splunk_backend = SplunkBackend(processing_pipeline=splunk_cim_data_model())
+def test_gravwell_data_model_registry_event():
+    gravwell_backend = GravwellBackend(processing_pipeline=gravwell_cim_data_model())
     rule = """
 title: Test
 status: test
@@ -415,7 +415,7 @@ detection:
         TargetObject: test
     condition: sel
     """
-    assert splunk_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""
+    assert gravwell_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""
 | tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Registry where
 Registry.registry_key_name="test" by Registry.dest Registry.registry_value_data Registry.action Registry.process_path Registry.process_guid Registry.process_id Registry.registry_key_name
 | `drop_dm_object_name(Registry)`
@@ -423,8 +423,8 @@ Registry.registry_key_name="test" by Registry.dest Registry.registry_value_data 
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(lastTime)
 """.replace("\n", "")]
 
-def test_splunk_data_model_registry_event():
-    splunk_backend = SplunkBackend(processing_pipeline=splunk_cim_data_model())
+def test_gravwell_data_model_registry_event():
+    gravwell_backend = GravwellBackend(processing_pipeline=gravwell_cim_data_model())
     rule = """
 title: Test
 status: test
@@ -436,15 +436,15 @@ detection:
         TargetObject: test
     condition: sel
     """
-    assert splunk_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Registry where
+    assert gravwell_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Registry where
 Registry.registry_key_name="test" by Registry.dest Registry.registry_value_data Registry.action Registry.process_path Registry.process_guid Registry.process_id Registry.registry_key_name
 | `drop_dm_object_name(Registry)`
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(firstTime)
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(lastTime)
 """.replace("\n", " ")]
 
-def test_splunk_data_model_registry_set():
-    splunk_backend = SplunkBackend(processing_pipeline=splunk_cim_data_model())
+def test_gravwell_data_model_registry_set():
+    gravwell_backend = GravwellBackend(processing_pipeline=gravwell_cim_data_model())
     rule = """
 title: Test
 status: test
@@ -456,15 +456,15 @@ detection:
         TargetObject: test
     condition: sel
     """
-    assert splunk_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Registry where
+    assert gravwell_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Registry where
 Registry.registry_key_name="test" by Registry.dest Registry.registry_value_data Registry.action Registry.process_path Registry.process_guid Registry.process_id Registry.registry_key_name
 | `drop_dm_object_name(Registry)`
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(firstTime)
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(lastTime)
 """.replace("\n", " ")]
 
-def test_splunk_data_model_file_event():
-    splunk_backend = SplunkBackend(processing_pipeline=splunk_cim_data_model())
+def test_gravwell_data_model_file_event():
+    gravwell_backend = GravwellBackend(processing_pipeline=gravwell_cim_data_model())
     rule = """
 title: Test
 status: test
@@ -476,15 +476,15 @@ detection:
         TargetFilename: test
     condition: sel
     """
-    assert splunk_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Filesystem where
+    assert gravwell_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Filesystem where
 Filesystem.file_path="test" by Filesystem.dest Filesystem.file_create_time Filesystem.process_path Filesystem.process_guid Filesystem.process_id Filesystem.file_path
 | `drop_dm_object_name(Filesystem)`
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(firstTime)
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(lastTime)
 """.replace("\n", " ")]
 
-def test_splunk_data_model_process_creation_linux():
-    splunk_backend = SplunkBackend(processing_pipeline=splunk_cim_data_model())
+def test_gravwell_data_model_process_creation_linux():
+    gravwell_backend = GravwellBackend(processing_pipeline=gravwell_cim_data_model())
     rule = """
 title: Test
 status: test
@@ -496,7 +496,7 @@ detection:
         CommandLine: test
     condition: sel
     """
-    assert splunk_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Processes where
+    assert gravwell_backend.convert(SigmaCollection.from_yaml(rule), "data_model") == ["""| tstats summariesonly=false allow_old_summaries=true fillnull_value="null" count min(_time) as firstTime max(_time) as lastTime from datamodel=Endpoint.Processes where
 Processes.process="test" by Processes.process Processes.dest Processes.process_current_directory Processes.process_path Processes.process_integrity_level Processes.original_file_name Processes.parent_process
 Processes.parent_process_path Processes.parent_process_guid Processes.parent_process_id Processes.process_guid Processes.process_id Processes.user
 | `drop_dm_object_name(Processes)`
@@ -504,8 +504,8 @@ Processes.parent_process_path Processes.parent_process_guid Processes.parent_pro
 | convert timeformat="%Y-%m-%dT%H:%M:%S" ctime(lastTime)
 """.replace("\n", " ")]
 
-def test_splunk_data_model_no_data_model_specified():
-    splunk_backend = SplunkBackend()
+def test_gravwell_data_model_no_data_model_specified():
+    gravwell_backend = GravwellBackend()
     rule = """
 title: Test
 status: test
@@ -518,4 +518,4 @@ detection:
     condition: sel
     """
     with pytest.raises(SigmaFeatureNotSupportedByBackendError, match="No data model specified"):
-        splunk_backend.convert(SigmaCollection.from_yaml(rule), "data_model")
+        gravwell_backend.convert(SigmaCollection.from_yaml(rule), "data_model")
