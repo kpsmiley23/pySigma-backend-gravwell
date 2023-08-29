@@ -6,11 +6,11 @@ from sigma.conversion.deferred import DeferredTextQueryExpression
 from sigma.conditions import ConditionFieldEqualsValueExpression, ConditionOR, ConditionAND, ConditionNOT, ConditionItem
 from sigma.types import SigmaCompareExpression
 from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
-from sigma.pipelines.splunk.splunk import splunk_sysmon_process_creation_cim_mapping, splunk_windows_registry_cim_mapping, splunk_windows_file_event_cim_mapping
+from sigma.pipelines.gravwell.gravwell import gravwell_sysmon_process_creation_cim_mapping, gravwell_windows_registry_cim_mapping, gravwell_windows_file_event_cim_mapping
 import sigma
 from typing import Callable, ClassVar, Dict, List, Optional, Pattern, Tuple
 
-class SplunkDeferredRegularExpression(DeferredTextQueryExpression):
+class GravwellDeferredRegularExpression(DeferredTextQueryExpression):
     template = 'regex {field}{op}"{value}"'
     operators = {
         True: "!=",
@@ -18,7 +18,7 @@ class SplunkDeferredRegularExpression(DeferredTextQueryExpression):
     }
     default_field = "_raw"
 
-class SplunkDeferredCIDRExpression(DeferredTextQueryExpression):
+class GravwellDeferredCIDRExpression(DeferredTextQueryExpression):
     template = 'where {op}cidrmatch("{value}", {field})'
     operators = {
         True: "NOT ",
@@ -26,9 +26,9 @@ class SplunkDeferredCIDRExpression(DeferredTextQueryExpression):
     }
     default_field = "_raw"
 
-class SplunkBackend(TextQueryBackend):
-    """Splunk SPL backend."""
-    name : ClassVar[str] = "Splunk SPL & tstats data model queries"               # A descriptive name of the backend
+class GravwellBackend(TextQueryBackend):
+    """Gravwell SPL backend."""
+    name : ClassVar[str] = "Gravwell SPL & tstats data model queries"               # A descriptive name of the backend
     formats : ClassVar[Dict[str, str]] = {                # Output formats provided by the backend as name -> description mapping. The name should match to finalize_output_<name>.
         "default": "Plain SPL queries",
         "savedsearches": "Plain SPL in a savedsearches.conf file",
@@ -98,17 +98,17 @@ class SplunkBackend(TextQueryBackend):
             output += f"\n{k} = " + " \\\n".join(v.split("\n"))  # cannot use \ in f-strings
         return output
 
-    def convert_condition_field_eq_val_re(self, cond : ConditionFieldEqualsValueExpression, state : "sigma.conversion.state.ConversionState") -> SplunkDeferredRegularExpression:
+    def convert_condition_field_eq_val_re(self, cond : ConditionFieldEqualsValueExpression, state : "sigma.conversion.state.ConversionState") -> GravwellDeferredRegularExpression:
         """Defer regular expression matching to pipelined regex command after main search expression."""
         if cond.parent_condition_chain_contains(ConditionOR):
-            raise SigmaFeatureNotSupportedByBackendError("ORing regular expressions is not yet supported by Splunk backend", source=cond.source)
-        return SplunkDeferredRegularExpression(state, cond.field, super().convert_condition_field_eq_val_re(cond, state)).postprocess(None, cond)
+            raise SigmaFeatureNotSupportedByBackendError("ORing regular expressions is not yet supported by Gravwell backend", source=cond.source)
+        return GravwellDeferredRegularExpression(state, cond.field, super().convert_condition_field_eq_val_re(cond, state)).postprocess(None, cond)
 
-    def convert_condition_field_eq_val_cidr(self, cond : ConditionFieldEqualsValueExpression, state : "sigma.conversion.state.ConversionState") -> SplunkDeferredCIDRExpression:
+    def convert_condition_field_eq_val_cidr(self, cond : ConditionFieldEqualsValueExpression, state : "sigma.conversion.state.ConversionState") -> GravwellDeferredCIDRExpression:
         """Defer CIDR network range matching to pipelined where cidrmatch command after main search expression."""
         if cond.parent_condition_chain_contains(ConditionOR):
-            raise SigmaFeatureNotSupportedByBackendError("ORing CIDR matching is not yet supported by Splunk backend", source=cond.source)
-        return SplunkDeferredCIDRExpression(state, cond.field, super().convert_condition_field_eq_val_cidr(cond, state)).postprocess(None, cond)
+            raise SigmaFeatureNotSupportedByBackendError("ORing CIDR matching is not yet supported by Gravwell backend", source=cond.source)
+        return GravwellDeferredCIDRExpression(state, cond.field, super().convert_condition_field_eq_val_cidr(cond, state)).postprocess(None, cond)
 
     def finalize_query_default(self, rule : SigmaRule, query : str, index : int, state : ConversionState) -> str:
         table_fields = " | table " + ",".join(rule.fields) if rule.fields else ""
@@ -134,20 +134,20 @@ class SplunkBackend(TextQueryBackend):
                 if rule.logsource.category == "process_creation":
                     data_model = 'Endpoint'
                     data_set = 'Processes'
-                    cim_fields = " ".join(splunk_sysmon_process_creation_cim_mapping.values())
+                    cim_fields = " ".join(gravwell_sysmon_process_creation_cim_mapping.values())
                 elif rule.logsource.category in ["registry_add", "registry_delete", "registry_event", "registry_set"]:
                     data_model = 'Endpoint'
                     data_set = 'Registry'
-                    cim_fields = " ".join(splunk_windows_registry_cim_mapping.values())
+                    cim_fields = " ".join(gravwell_windows_registry_cim_mapping.values())
                 elif rule.logsource.category == "file_event":
                     data_model = 'Endpoint'
                     data_set = 'Filesystem'
-                    cim_fields = " ".join(splunk_windows_file_event_cim_mapping.values())
+                    cim_fields = " ".join(gravwell_windows_file_event_cim_mapping.values())
             elif rule.logsource.product == "linux":
                 if rule.logsource.category == "process_creation":
                     data_model = 'Endpoint'
                     data_set = 'Processes'
-                    cim_fields = " ".join(splunk_sysmon_process_creation_cim_mapping.values())
+                    cim_fields = " ".join(gravwell_sysmon_process_creation_cim_mapping.values())
 
         try:
             data_model_set = state.processing_state["data_model_set"]
