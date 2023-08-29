@@ -1,7 +1,7 @@
 import pytest
 from sigma.collection import SigmaCollection
-from sigma.backends.splunk import SplunkBackend
-from sigma.pipelines.splunk import splunk_windows_pipeline, splunk_windows_sysmon_acceleration_keywords, splunk_cim_data_model
+from sigma.backends.gravwell import GravwellBackend
+from sigma.pipelines.gravwell import gravwell_windows_pipeline, gravwell_windows_sysmon_acceleration_keywords, gravwell_cim_data_model
 from sigma.pipelines.common import windows_logsource_mapping
 from sigma.exceptions import SigmaTransformationError
 
@@ -9,9 +9,9 @@ from sigma.exceptions import SigmaTransformationError
     ("service", "source"),
     windows_logsource_mapping.items()
 )
-def test_splunk_windows_pipeline_simple(service, source):
+def test_gravwell_windows_pipeline_simple(service, source):
     if isinstance(source, str):
-        assert SplunkBackend(processing_pipeline=splunk_windows_pipeline()).convert(
+        assert GravwellBackend(processing_pipeline=gravwell_windows_pipeline()).convert(
             SigmaCollection.from_yaml(f"""
                 title: Test
                 status: test
@@ -26,7 +26,7 @@ def test_splunk_windows_pipeline_simple(service, source):
             """)
         ) == [f"source=\"WinEventLog:{source}\" EventCode=123 field=\"value\""]
     else:
-        assert SplunkBackend(processing_pipeline=splunk_windows_pipeline()).convert(
+        assert GravwellBackend(processing_pipeline=gravwell_windows_pipeline()).convert(
             SigmaCollection.from_yaml(f"""
                 title: Test
                 status: test
@@ -44,8 +44,8 @@ def test_splunk_windows_pipeline_simple(service, source):
                 for source_item in source
             )) + ") EventCode=123 field=\"value\""]
 
-def test_splunk_sysmon_process_creation_keyword_acceleration():
-    assert SplunkBackend(processing_pipeline=splunk_windows_pipeline() + splunk_windows_sysmon_acceleration_keywords()).convert(
+def test_gravwell_sysmon_process_creation_keyword_acceleration():
+    assert GravwellBackend(processing_pipeline=gravwell_windows_pipeline() + gravwell_windows_sysmon_acceleration_keywords()).convert(
         SigmaCollection.from_yaml(f"""
             title: Test
             status: test
@@ -60,8 +60,8 @@ def test_splunk_sysmon_process_creation_keyword_acceleration():
         """)
     )[0].startswith('"ParentProcessGuid"')
 
-def test_splunk_sysmon_file_creation_keyword_acceleration():
-    assert SplunkBackend(processing_pipeline=splunk_windows_pipeline() + splunk_windows_sysmon_acceleration_keywords()).convert(
+def test_gravwell_sysmon_file_creation_keyword_acceleration():
+    assert GravwellBackend(processing_pipeline=gravwell_windows_pipeline() + gravwell_windows_sysmon_acceleration_keywords()).convert(
         SigmaCollection.from_yaml(f"""
             title: Test
             status: test
@@ -76,8 +76,8 @@ def test_splunk_sysmon_file_creation_keyword_acceleration():
         """)
     )[0].startswith('"TargetFilename"')
 
-def test_splunk_process_creation_dm():
-    assert SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+def test_gravwell_process_creation_dm():
+    assert GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
         SigmaCollection.from_yaml(f"""
             title: Test
             status: test
@@ -102,9 +102,9 @@ def test_splunk_process_creation_dm():
         """)
     ) == [f"Processes.process=\"test\" Processes.process_current_directory=\"test\" Processes.process_path=\"test\" Processes.process_integrity_level=\"test\" Processes.original_file_name=\"test\" Processes.parent_process=\"test\" Processes.parent_process_path=\"test\" Processes.parent_process_guid=\"test\" Processes.parent_process_id=\"test\" Processes.process_guid=\"test\" Processes.process_id=\"test\" Processes.user=\"test\""]
 
-def test_splunk_process_creation_dm_unsupported_fields():
+def test_gravwell_process_creation_dm_unsupported_fields():
     with pytest.raises(SigmaTransformationError):
-        SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+        GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
             SigmaCollection.from_yaml(f"""
                 title: Test
                 status: test
@@ -118,8 +118,8 @@ def test_splunk_process_creation_dm_unsupported_fields():
             """)
         )
 
-def test_splunk_registry_add_dm():
-    assert SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+def test_gravwell_registry_add_dm():
+    assert GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
         SigmaCollection.from_yaml(f"""
             title: Test
             status: test
@@ -141,8 +141,8 @@ def test_splunk_registry_add_dm():
 Registry.process_path=\"test\" Registry.process_guid=\"test\" Registry.process_id=\"test\"
 Registry.registry_key_name=\"test\"""".replace("\n", " ")]
 
-def test_splunk_registry_delete_dm():
-    assert SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+def test_gravwell_registry_delete_dm():
+    assert GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
         SigmaCollection.from_yaml(f"""
             title: Test
             status: test
@@ -164,8 +164,8 @@ def test_splunk_registry_delete_dm():
 Registry.process_path=\"test\" Registry.process_guid=\"test\" Registry.process_id=\"test\"
 Registry.registry_key_name=\"test\"""".replace("\n", " ")]
 
-def test_splunk_registry_event_dm():
-    assert SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+def test_gravwell_registry_event_dm():
+    assert GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
         SigmaCollection.from_yaml(f"""
             title: Test
             status: test
@@ -187,8 +187,8 @@ def test_splunk_registry_event_dm():
 Registry.process_path=\"test\" Registry.process_guid=\"test\" Registry.process_id=\"test\"
 Registry.registry_key_name=\"test\"""".replace("\n", " ")]
 
-def test_splunk_registry_set_dm():
-    assert SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+def test_gravwell_registry_set_dm():
+    assert GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
         SigmaCollection.from_yaml(f"""
             title: Test
             status: test
@@ -210,9 +210,9 @@ def test_splunk_registry_set_dm():
 Registry.process_path=\"test\" Registry.process_guid=\"test\" Registry.process_id=\"test\"
 Registry.registry_key_name=\"test\"""".replace("\n", " ")]
 
-def test_splunk_registry_dm_unsupported_fields():
+def test_gravwell_registry_dm_unsupported_fields():
     with pytest.raises(SigmaTransformationError):
-        SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+        GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
             SigmaCollection.from_yaml(f"""
                 title: Test
                 status: test
@@ -226,8 +226,8 @@ def test_splunk_registry_dm_unsupported_fields():
             """)
         )
 
-def test_splunk_file_event_dm():
-    assert SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+def test_gravwell_file_event_dm():
+    assert GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
         SigmaCollection.from_yaml(f"""
             title: Test
             status: test
@@ -247,9 +247,9 @@ def test_splunk_file_event_dm():
     ) == [f"""Filesystem.dest=\"test\" Filesystem.file_create_time=\"test\" Filesystem.process_path=\"test\"
 Filesystem.process_guid=\"test\" Filesystem.process_id=\"test\" Filesystem.file_path=\"test\"""".replace("\n", " ")]
 
-def test_splunk_file_event_dm_unsupported_fields():
+def test_gravwell_file_event_dm_unsupported_fields():
     with pytest.raises(SigmaTransformationError):
-        SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+        GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
             SigmaCollection.from_yaml(f"""
                 title: Test
                 status: test
@@ -263,9 +263,9 @@ def test_splunk_file_event_dm_unsupported_fields():
             """)
         )
 
-def test_splunk_dm_unsupported_logsource():
+def test_gravwell_dm_unsupported_logsource():
     with pytest.raises(SigmaTransformationError):
-        SplunkBackend(processing_pipeline=splunk_cim_data_model()).convert(
+        GravwellBackend(processing_pipeline=gravwell_cim_data_model()).convert(
             SigmaCollection.from_yaml(f"""
                 title: Test
                 status: test
