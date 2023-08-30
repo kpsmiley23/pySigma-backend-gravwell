@@ -1,5 +1,5 @@
 ![Tests](https://github.com/SigmaHQ/pySigma-backend-Gravwell/actions/workflows/test.yml/badge.svg)
-![Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/thomaspatzke/47c292239759399a6e3c73b0e9656b33/raw/SigmaHQ-pySigma-backend-Gravwell.json)
+[Coverage Badge](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/thomaspatzke/47c292239759399a6e3c73b0e9656b33/raw/SigmaHQ-pySigma-backend-Gravwell.json)
 ![Status](https://img.shields.io/badge/Status-pre--release-orange)
 
 # pySigma Gravwell Backend
